@@ -11,7 +11,7 @@ import time
 
 if __name__ == '__main__':
 
-    bike = pd.read_csv("day.csv")
+    bike = pd.read_csv("Bike-dataset/day.csv")
     # Difference in days, which takes DST into account
     bike["trend"] = bike["instant"]-1
     bike["cosyear"] = np.cos(math.pi*bike["trend"]/365*2)
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     X_data = bike[x_var]
     Y_data = bike[y_var]
 
-    train_index = pd.read_csv('train_index.csv')["Resample1"].to_numpy()-1
+    train_index = pd.read_csv('Bike-dataset/train_index.csv')["Resample1"].to_numpy()-1
     test_index = bike.index.difference(train_index)
 
     X_train = X_data.iloc[train_index]
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
 
     model = xgboost.XGBRegressor()
-    model.load_model("R-bike-model.json")
+    model.load_model("Bike-dataset/R-bike-model.json")
 
     #print("Start: Explainer_symmetric")
     explainer_symmetric = Explainer(X_train, model)
