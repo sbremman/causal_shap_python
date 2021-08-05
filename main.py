@@ -1,11 +1,8 @@
-from sample_causal import sample_causal
 import numpy as np
 import pandas as pd
-from feature_combinations import powerset, feature_exact, feature_not_exact, feature_combinations, weight_matrix
 import math
 import xgboost
 from explainer import Explainer
-import matplotlib.pyplot as plt
 import shap
 import time
 
@@ -59,8 +56,3 @@ if __name__ == '__main__':
 
     shap.plots.waterfall(explanation_causal[126][[1, 3]])
     shap.plots.waterfall(explanation_causal[139][[1, 3]])
-
-
-
-
-
