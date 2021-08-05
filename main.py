@@ -47,7 +47,11 @@ if __name__ == '__main__':
 
     confounding = [False, True, False]
 
-    explanation_causal = explainer_symmetric.explain_causal(X_test, p, ordering=partial_order, confounding=confounding, seed=2020)
+    explanation_causal = explainer_symmetric.explain_causal(X_test,
+                                                            p,
+                                                            ordering=partial_order,
+                                                            confounding=confounding,
+                                                            seed=None)
 
     shap.plots.waterfall(explanation_causal[126][[1, 3]])
     shap.plots.waterfall(explanation_causal[139][[1, 3]])
