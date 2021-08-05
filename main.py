@@ -40,19 +40,14 @@ if __name__ == '__main__':
     model = xgboost.XGBRegressor()
     model.load_model("Bike-dataset/R-bike-model.json")
 
-    #print("Start: Explainer_symmetric")
     explainer_symmetric = Explainer(X_train, model)
-    #print("Done: Explainer_symmetric")
     p = Y_train.mean()
 
     partial_order = [[0], [1, 2], [3, 4, 5, 6]]
 
     confounding = [False, True, False]
 
-    start_time_explain_causal = time.perf_counter()
     explanation_causal = explainer_symmetric.explain_causal(X_test, p, ordering=partial_order, confounding=confounding, seed=2020)
-    stop_time_explain_causal = time.perf_counter()
-    print(f"Sample causal took {stop_time_explain_causal - start_time_explain_causal:0.4f} seconds")
 
     shap.plots.waterfall(explanation_causal[126][[1, 3]])
     shap.plots.waterfall(explanation_causal[139][[1, 3]])
