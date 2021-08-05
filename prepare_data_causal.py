@@ -1,9 +1,8 @@
 from sample_causal import sample_causal
 import numpy as np
 import pandas as pd
-import time
-
-# Maybe args should not be like this?
+from tqdm.auto import tqdm
+import logging
 
 def prepare_data_causal(explainer, seed=None, n_samples = 1000, index_features = None, asymmetric = False, ordering = None, args=[]):
     # Don't know if something similar should be done in python? line below
@@ -37,12 +36,10 @@ def prepare_data_causal(explainer, seed=None, n_samples = 1000, index_features =
         #  features = features[]
         #  features <- features[sapply(features, respects_order, ordering = ordering)]
 
-    for i in range(n_xtest):
-        print(str(i)+" of "+str(n_xtest)+" n_xtest")
-        start_time_sample_causal = time.perf_counter()
+    for i in tqdm(range(n_xtest), desc="sample_causal loop"):
+        #print(str(i)+" of "+str(n_xtest)+" n_xtest")
         l = [sample_causal(feature_element, n_samples, explainer.mu, explainer.cov_mat, len(explainer.x_test.columns), explainer.x_test.iloc[i], ordering=explainer.ordering, confounding=explainer.confounding) for feature_element in features]
-        stop_time_sample_causal = time.perf_counter()
-        #print(f"Sample causal took {stop_time_sample_causal - start_time_sample_causal:0.4f} seconds")
+
         for j in range(len(l)):
             l[j].insert(0, 'id_combination', j)
 

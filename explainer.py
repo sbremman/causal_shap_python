@@ -7,7 +7,7 @@ from shap import Explanation
 import sys
 import torch
 import math
-import time
+import random
 
 
 class Explainer:
@@ -40,8 +40,6 @@ class Explainer:
         else:
             self.model_type = model._get_type()
 
-        print("Model type: "+str(self.model_type))
-
 
         # Checks input argument
         # TODO feature_labels = features(model, x_train.columns.tolist(), feature_labels)
@@ -64,12 +62,10 @@ class Explainer:
             self.num_outputs = self.p.shape[1]
         else:
             self.num_outputs = 1
-        print(self.num_outputs)
 
         dt_combinations = feature_combinations(m=self.n_features, exact=self.exact, n_combinations=n_combinations)
         # Get weighted matrix
         weighted_mat = weight_matrix(X=dt_combinations, normalize_W_weights=True)
-
 
         # Get feature matrix
         feature_mat = feature_matrix(feature_sample=dt_combinations["features"], m=self.n_features)
@@ -112,6 +108,11 @@ class Explainer:
 
 
     def explain_causal(self, x, prediction_zero, mu=None, cov_mat=None, ordering=None, confounding=False, asymmetric=False, seed=None, shap_format=True):
+        #Set seed if given
+        if seed is not None:
+            random.seed(a=seed)
+            np.random.seed(seed)
+
         # Add arguments to explainer object
         self.x_test = x.reset_index(drop=True)
 
@@ -136,18 +137,14 @@ class Explainer:
         self.confounding = confounding
 
         # Generate data
-        print("Start: prepare_data_causal")
         dt = prepare_data_causal(self, asymmetric=asymmetric, ordering=ordering)
-        print("Done: prepare_data_causal")
 
         if self.return_val is not None:
             print("Return_val is not none")
             return dt
 
         # Predict
-        print("Start: prediction")
         r = self.prediction(dt, prediction_zero)
-        print("Done: prediction")
 
         if shap_format:
             return self.r_to_shap_format(r)
@@ -158,7 +155,6 @@ class Explainer:
     def r_to_shap_format(self, r):
 
         base_values = r['dt'].pop('none').values
-        base_values_old = base_values
         values = r['dt'].values
         data = r['x_test'].values
 
@@ -167,13 +163,6 @@ class Explainer:
         values = values.reshape([self.num_outputs, data.shape[0], data.shape[1]])
 
         data = np.array([data]*self.num_outputs)
-
-        print("base_values")
-        print(base_values.shape)
-        print("values")
-        print(values.shape)
-        print("data")
-        print(data.shape)
 
         display_data = None
         instance_names = None
@@ -192,25 +181,25 @@ class Explainer:
                 temp_values = values[i]
                 temp_base_values = base_values[i]
                 temp_data = data[i]
-                #out = Explanation(values, base_values, data, display_data, instance_names, feature_names, output_names, output_indexes, lower_bounds, upper_bounds, main_effects, hierarchical_values, clustering)
                 out = Explanation(temp_values, temp_base_values, temp_data, display_data, instance_names, feature_names, output_names, output_indexes, lower_bounds, upper_bounds, main_effects, hierarchical_values, clustering)
                 explanation_list.append(out)
 
-        out = explanation_list
+        if len(explanation_list) == 1:
+            explanation_list = explanation_list[0]
 
-        return out
+        return explanation_list
 
     def prediction(self, dt, prediction_zero):
-        # Check that data is in pandas dataframe
-        # check that dataframe has "id", "id_combination" and "w" columns
+        # TODO Check that data is in pandas dataframe
+        # TODO check that dataframe has "id", "id_combination" and "w" columns
 
         # Setup
         cnms = list(self.x_test.columns.values)
 
-        #Check that the number of test observations equals max(id) + 1
+        # Check that the number of test observations equals max(id) + 1
         if len(self.x_test.index) != dt['id'].max()+1:
             print("\n\n\n\n!!!!Number of test observations ("+str(len(self.x_test.index))+") did not equal max(id) + 1 ("+str(dt['id'].max()+1)+")!!!!\n\n\n\n")
-            #exit("Number of test observations did not equal max(id)")
+            exit("Number of test observations did not equal max(id)")
 
         # Predictions
         p_hat = self.predict_model(self.model, dt[cnms])
@@ -222,18 +211,14 @@ class Explainer:
             dt['p_hat_'+str(0)] = p_hat[:]
             dt.loc[dt.id_combination == 0, 'p_hat_'+str(0)] = float(prediction_zero[0])
 
-        print("End: p_hat predict_model. Time: ")
-        #dt['p_hat'] = self.model.predict(dt[cnms])
 
-        print("Start: p_all predict_model")
         p_all = self.predict_model(self.model, self.x_test)
-        print("End: p_all predict_model. Time: ")
-        # TODO this should be implemented, however, on the bike-dataset, it does not matter (I think):
+
+        # TODO this should be implemented, however, on the bike-dataset, it at least does not matter:
         #dt.loc[dt.id_combination == dt.id_combination.max(), 'p_hat'] = p_all["id"]
         #print(dt)
 
         # Calculate contributions
-        print("Start: calulcate contributions")
         dt_list = []
         for i in range(self.num_outputs):
             dt_temp = dt[['id', 'id_combination', 'w']]
@@ -245,12 +230,8 @@ class Explainer:
             dt_mat = dt_res.unstack().values[:, :]
             kshap = (self.W.dot(dt_mat.T)).T
             cnms_temp = ['none']+cnms
-            #cnms_temp = [name+"_"+str(i) for name in cnms_temp]
             dt_kshap = pd.DataFrame(data=kshap, columns=cnms_temp)
             dt_list.append(dt_kshap)
-
-        stop_time = time.perf_counter()
-        print("End: calculate contributions. Time: ")
 
         r = {"dt": pd.concat(dt_list),
              "model": self.model,

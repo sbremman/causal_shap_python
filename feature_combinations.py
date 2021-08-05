@@ -6,7 +6,6 @@ import random
 import numpy as np
 
 def weight_matrix(X, normalize_W_weights = True):
-    print("weight_matrix")
     # Fetch weights
     w = X['shapley_weight'].copy()
     if normalize_W_weights:
@@ -16,8 +15,6 @@ def weight_matrix(X, normalize_W_weights = True):
     return W
 
 def weight_matrix_temp(features, m, n, w):
-    # TODO Originally written in C++, should maybe do that as well.
-    print("weight_matrix_temp")
     Z = np.zeros([n, m+1])
     X = np.zeros([n, m+1])
 
@@ -40,7 +37,7 @@ def weight_matrix_temp(features, m, n, w):
 
 def helper_feature(m, feature_sample):
     x = feature_matrix(feature_sample, m)
-    dt = pd.DataFrame(x)#, columns=["V%d" % i for i in range(10)])
+    dt = pd.DataFrame(x)
     sample_frequency_dict = dt.value_counts().to_dict()
     sample_frequency = []
     for sample in x:
@@ -52,11 +49,7 @@ def helper_feature(m, feature_sample):
 
 
 def feature_matrix(feature_sample, m):
-    print("feature_matrix")
-    # TODO this was also written in c++. This version is probably quite inefficient
     feature_mat = []
-
-    print(len(feature_sample))
     for features in feature_sample:
         feature_vector = np.array([0] * m)
         feature_vector[features] = 1
@@ -114,7 +107,6 @@ def feature_combinations(m, exact=True, n_combinations=200, weight_zero_m=10 ** 
 
 def feature_exact(m, weight_zero_m=10 ** 6, asymmetric=False, ordering=None):
     dt = pd.DataFrame(range(2 ** m), columns=['id_combinations'])
-    #combinations = powerset(range(1, m + 1))
     combinations = powerset(range(0, m))
     combinations = [list(entry) for entry in combinations]
     dt['features'] = combinations
