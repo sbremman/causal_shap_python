@@ -7,7 +7,6 @@ import shap
 import time
 
 if __name__ == '__main__':
-
     bike = pd.read_csv("Bike-dataset/day.csv")
     # Difference in days, which takes DST into account
     bike["trend"] = bike["instant"]-1
@@ -46,12 +45,43 @@ if __name__ == '__main__':
     partial_order = [[0], [1, 2], [3, 4, 5, 6]]
 
     confounding = [False, True, False]
-
+    start = time.perf_counter()
     explanation_causal = explainer_symmetric.explain_causal(X_test,
                                                             p,
                                                             ordering=partial_order,
                                                             confounding=confounding,
-                                                            seed=None)
+                                                            seed=2)
+    stop = time.perf_counter()
 
-    shap.plots.waterfall(explanation_causal[126][[1, 3]])
-    shap.plots.waterfall(explanation_causal[139][[1, 3]])
+    print("explain_causal time : "+str(stop-start))
+    #print(explanation_causal.values[126][1])
+    shap.waterfall_plot(explanation_causal[126][[1, 3]])
+    shap.waterfall_plot(explanation_causal[139][[1, 3]])
+    """test_1 = []
+    test_2 = []
+    test_3 = []
+    for i in range(50):
+        explanation_causal = explainer_symmetric.explain_causal(X_test,
+                                                                p,
+                                                                ordering=partial_order,
+                                                                confounding=confounding,
+                                                                seed=4)
+        test_1.append(explanation_causal.values[126][1])
+        test_2.append(explanation_causal.values[100][3])
+        test_3.append(explanation_causal.values[60][5])
+
+    print("test_1: ")
+    lst = test_1
+    print("mean: "+str(sum(lst) / len(lst)))
+    print("std: "+str(np.std(lst)))
+
+    print("test_2: ")
+    lst = test_2
+    print("mean: " + str(sum(lst) / len(lst)))
+    print("std: " + str(np.std(lst)))
+
+    print("test_3: ")
+    lst = test_3
+    print("mean: " + str(sum(lst) / len(lst)))
+    print("std: " + str(np.std(lst)))"""
+

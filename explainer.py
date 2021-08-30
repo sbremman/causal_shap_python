@@ -1,4 +1,6 @@
 import sys
+import time
+
 import pandas as pd
 import numpy as np
 from feature_combinations import feature_combinations, feature_matrix, weight_matrix
@@ -131,7 +133,7 @@ class Explainer:
         if np.any(eigen_values < 1e-06):
             exit("Covariance matrix is not positive-definite, not yet implemented")
         else:
-            self.cov_mat = cov_mat
+            self.cov_mat = cov_mat.to_numpy()
 
         self.ordering = ordering
         self.confounding = confounding

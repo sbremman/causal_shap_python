@@ -1,8 +1,11 @@
+import time
+
 from sample_causal import sample_causal
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
-import logging
+import multiprocessing
+from joblib import Parallel, delayed
 
 def prepare_data_causal(explainer, seed=None, n_samples = 1000, index_features = None, asymmetric = False, ordering = None, args=[]):
     # Don't know if something similar should be done in python? line below
@@ -36,25 +39,34 @@ def prepare_data_causal(explainer, seed=None, n_samples = 1000, index_features =
         #  features = features[]
         #  features <- features[sapply(features, respects_order, ordering = ordering)]
 
-    for i in tqdm(range(n_xtest), desc="sample_causal loop"):
-        #print(str(i)+" of "+str(n_xtest)+" n_xtest")
-        l = [sample_causal(feature_element, n_samples, explainer.mu, explainer.cov_mat, len(explainer.x_test.columns), explainer.x_test.iloc[i], ordering=explainer.ordering, confounding=explainer.confounding) for feature_element in features]
-
-        for j in range(len(l)):
-            l[j].insert(0, 'id_combination', j)
-
-        l = pd.concat(l, ignore_index=True)
-        l['w'] = 1/n_samples
-        l['id'] = i
-
-
-        if index_features is not None:
-            #don't know what is happening here
-            exit("prepare_data_causal: index_features is not None")
-        dt_l.append(l)
-
+    num_cores = multiprocessing.cpu_count()
+    inputs = range(n_xtest)
+    seeds = np.random.randint(2**32-1, size=n_xtest)
+    dt_l = Parallel(n_jobs=num_cores)(delayed(sample_causal_loop)(i, n_samples, explainer,
+                                                                  features, index_features, seeds[i]) for i in inputs)
+    #print(len(sample_causal_list))
+    #exit()
+    """for i in range(len(dt_l)):
+        print(dt_l[i]['id'])    
+    exit()"""
     dt = pd.concat(dt_l, ignore_index=True)
     dt.loc[dt.id_combination == 0, 'w'] = 1.0
     dt.loc[dt.id_combination == 2**(len(explainer.x_test.columns))-1, 'w'] = 1.0
     return dt
 
+def sample_causal_loop(i, n_samples, explainer, features, index_features, seed):
+    # print(str(i)+" of "+str(n_xtest)+" n_xtest")
+    l = [sample_causal(feature_element, n_samples, explainer.mu, explainer.cov_mat, len(explainer.x_test.columns),
+                       explainer.x_test.iloc[i], ordering=explainer.ordering, confounding=explainer.confounding,
+                       seed=seed) for feature_element in features]
+    for j in range(len(l)):
+        l[j].insert(0, 'id_combination', j)
+
+    l = pd.concat(l, ignore_index=True)
+    l['w'] = 1 / n_samples
+    l['id'] = i
+
+    if index_features is not None:
+        #   don't know what is happening here
+        exit("prepare_data_causal: index_features is not None")
+    return l
