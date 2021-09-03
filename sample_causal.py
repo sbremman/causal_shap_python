@@ -75,10 +75,10 @@ def sample_causal(index_given, n_samples, mu, cov_mat, m, x_test, ordering=None,
                 mu_sample, mu_cond = np.repeat(np.array([mu[to_be_sampled]]), n_samples, axis=0), \
                                      np.repeat(np.array([mu[to_be_conditioned]]), n_samples, axis=0)
 
-                cMU = mu_sample + cd_inv.dot((xall[:, to_be_conditioned] - mu_cond).T).T
-                new_samples = np.random.multivariate_normal(mean=np.array([0] * len(to_be_sampled)),
-                                                            cov=cVar,
-                                                            size=n_samples)
+                cMU, new_samples = mu_sample + cd_inv.dot((xall[:, to_be_conditioned] - mu_cond).T).T, \
+                                   np.random.multivariate_normal(mean=np.array([0] * len(to_be_sampled)),
+                                                                 cov=cVar,
+                                                                 size=n_samples)
                 new_samples = new_samples + cMU
 
             xall[:, to_be_sampled] = new_samples

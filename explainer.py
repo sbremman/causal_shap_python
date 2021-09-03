@@ -87,6 +87,7 @@ class Explainer:
 
     def predict_model(self, model, data):
         if self.model_type == "pytorch":
+            # Do this in batches to avoid loading a dataset that is too big to memory.
             batch_size = 2000
             data_temp = np.array_split(data, max(1, math.floor(len(data.values)/batch_size)))
 
@@ -183,7 +184,19 @@ class Explainer:
                 temp_values = values[i]
                 temp_base_values = base_values[i]
                 temp_data = data[i]
-                out = Explanation(temp_values, temp_base_values, temp_data, display_data, instance_names, feature_names, output_names, output_indexes, lower_bounds, upper_bounds, main_effects, hierarchical_values, clustering)
+                out = Explanation(temp_values,
+                                  temp_base_values,
+                                  temp_data,
+                                  display_data,
+                                  instance_names,
+                                  feature_names,
+                                  output_names,
+                                  output_indexes,
+                                  lower_bounds,
+                                  upper_bounds,
+                                  main_effects,
+                                  hierarchical_values,
+                                  clustering)
                 explanation_list.append(out)
 
         if len(explanation_list) == 1:
